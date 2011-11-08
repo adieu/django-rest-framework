@@ -130,6 +130,8 @@ class View(ResourceMixin, RequestMixin, ResponseMixin, AuthMixin, DjangoView):
 
             response_obj = handler(request, *args, **kwargs)
 
+            self._check_obj_permissions(response_obj)
+
             # Allow return value to be either HttpResponse, Response, or an object, or None
             if isinstance(response_obj, HttpResponse):
                 return response_obj

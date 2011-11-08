@@ -354,6 +354,12 @@ class AuthMixin(object):
     """
     permissions = ()
 
+    """
+    The set of permissions that will be enforced on the result object.
+
+    Should be a tuple/list of classes as described in the :mod:`permissions` module.
+    """
+    obj_permissions = ()
 
     @property
     def user(self):
@@ -388,6 +394,15 @@ class AuthMixin(object):
         for permission_cls in self.permissions:
             permission = permission_cls(self)
             permission.check_permission(user)
+
+    def _check_obj_permissions(self, obj):
+        """
+        Check obj permissions and either raise an ``ErrorResponse`` or return.
+        """
+        user = self.user
+        for permission_cls in self.obj_permissions:
+            permission = permission_cls(self)
+            permission.check_permission(user, obj)
 
 
 ########## Resource Mixin ##########
@@ -624,7 +639,7 @@ class ListModelMixin(object):
     def get(self, request, *args, **kwargs):
         model = self.resource.model
 
-        queryset = self.queryset if self.queryset is not None else model.objects.all()
+        queryset = self.get_queryset() if self.get_queryset() is not None else model.objects.all()
 
         if hasattr(self, 'resource'):
             ordering = getattr(self.resource, 'ordering', None)
@@ -636,4 +651,5 @@ class ListModelMixin(object):
             queryset = queryset.order_by(*args)
         return queryset.filter(**kwargs)
 
-
+    def get_queryset(self):
+        return self.queryset
