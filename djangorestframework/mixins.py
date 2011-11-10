@@ -15,6 +15,7 @@ from djangorestframework.resources import Resource, FormResource, ModelResource
 from djangorestframework.response import Response, ErrorResponse
 from djangorestframework.utils import as_tuple, MSIE_USER_AGENT_REGEX
 from djangorestframework.utils.mediatypes import is_form_media_type, order_by_precedence
+from djangorestframework import signals
 
 from decimal import Decimal
 import re
@@ -564,6 +565,8 @@ class CreateModelMixin(object):
                     data[m2m_data[fieldname][0]] = related_item
                     manager.through(**data).save()
 
+        signals.obj_created.send(sender=model, obj=instance, request=self.request)
+
         headers = {}
         if hasattr(instance, 'get_absolute_url'):
             headers['Location'] = self.resource(self).url(instance)
@@ -593,6 +596,9 @@ class UpdateModelMixin(object):
             self.model_instance.save()
 
         self.model_instance.save()
+
+        signals.obj_updated.send(sender=model, obj=self.model_instance, request=self.request)
+
         return self.model_instance
 
 
@@ -614,6 +620,9 @@ class DeleteModelMixin(object):
             raise ErrorResponse(status.HTTP_404_NOT_FOUND, None, {})
 
         instance.delete()
+
+        signals.obj_deleted.send(sender=model, obj=instance, request=self.request)
+
         return
 
 
